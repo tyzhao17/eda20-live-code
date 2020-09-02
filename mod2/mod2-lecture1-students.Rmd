@@ -11,7 +11,7 @@ Key themes overview:
 - how to "look" at your data when you first load it in
 - there are two familiar ways of storing tabulated data: in a “wide” format, and in a “long” format. *Wide* data has a column for each variable. 
 - you will hear people use different terms like "variable" and "attribute" to describe "features" of data
-- you've learned to 'index' using brackets and the `$` symbol, this lesson builds on your familiarity with "indexing" to manipulate data using data.table formatting
+- you've learned to 'index' using brackets and the `$` symbol, this lesson builds on your familiarity with "indexing" to manipulate data using data.table formatting. data$variablename
 - today we will talk about `data.table` which works well with large files and is fast for things like subset, grouping, and joins
 
 --- 
@@ -21,6 +21,7 @@ Key themes overview:
 As I mentioned, there are typically two ways that "observational, "rectangular" data are typically stored. *Long* and *wide* data. In general, we are focusing on "rectangular" data, i.e. collections of values that are each associated with a variable and an observation. We can quickly think of data types that do not fit this description: images, videos, text, audio, and even sometimes network data. Let's consider the two examples of data organization below.
 
 Which is this? Answer: *Long*
+different types of information within these columns.
 
 Product   Attribute   Value
 -------   ---------   -----
@@ -31,13 +32,14 @@ B         Height      20
 B         Width       10
 
 Instructor note: The same data is a *wide* format would be:
+different types of information get their own rows
 
 Product  Height  Width  Weight
 -------  ------  -----  ------
 A        10      5      2
 B        20      10     NA
 
-An easy way to spot the difference it to look for categorical data. In the first case we see that the variable "attribute" contains the categories "Weight" and "Height." (E.g., this is called a "categorical" variable) For each variable to have their own column, as in the *wide* format, we'd want both "weight" and "height" to have their own column, like is shown in table 2. 
+An easy way to spot the difference it to look for categorical data. In the first case we see that the variable "attribute" contains the categories "Weight", "Width", and "Height." (E.g., this is called a "categorical" variable) For each variable to have their own column, as in the *wide* format, we'd want both "weight" and "height" to have their own column, like is shown in table 2. 
 
 Let's get started exploring some data below. Begin with a few packages. You should already have most these on your machine, though you might not have data.table!
 
@@ -63,7 +65,7 @@ The `fread` function is from the `data.table` package. Use `?fread()` to find ou
 - https://www.datacamp.com/community/tutorials/importing-data-r-part-two
 - Note that reading in your data with the fread() function returns you a data table:
 
-Instructor note: Described as the “fast and friendly file finagler”, the popular data.table package is an extremely useful and easy to use. Its fread() function is meant to import data from regular delimited files directly into R, without any detours or nonsense.Note that “regular” in this case means that every row of your data needs to have the same number of columns.(From datacamp). It is equivalent to read.csv() function of base R
+Instructor note: Described as the “fast and friendly file finagler”, the popular data.table package is an extremely useful and easy to use. Its fread() function is meant to import data from regular delimited files directly into R, without any detours or nonsense. Note that “regular” in this case means that every row of your data needs to have the same number of columns.(From datacamp). It is equivalent to read.csv() function of base R
 
 ```{r}
 #https://www.listendata.com/2016/10/r-data-table.html
@@ -74,29 +76,30 @@ flights = fread("https://github.com/arunsrinivasan/satrdays-workshop/raw/master/
 Use a few base R commands to explore the data. What do we see?
 
 ```{r}
-nrow()
+nrow(flights)
 ```
 
 We might say, depending on how the data is organized (we will examine this with `head` below) that it has over 250,000 cases (or units) and 17 variables (or features) that describe the units.
 
 ```{r}
-ncol()
+ncol(flights)
 ```
 
 ```{r}
-names()
+names(flights)
 ```
 
 Already we are getting a feel for the shape and size of the data. How is it set up? What kind of object is it to R? These are the kinds of questions you always want to ask first about the data you are about to explore.
 
 ```{r}
-head()
+head(flights)
+class(flights)
 #view(flights)
 ```
 
 We can see that this data is time series data! Each row of the data is providing information about a year or date. Dates are typically considered to be *interval* data.
 
-So in this case, our unit is actually a chunk of time. We will talk more about time series later in the course. For now, let's just investigate the data a bit more. Let's use indexing (or "subsetting") to examine the 'origin' feature (variable, row).
+So in this case, our unit is actually a chunk of time. We will talk more about time series later in the course. For now, let's just investigate the data a bit more. Let's use indexing (or "subsetting") to examine the 'origin' feature (variable, column of data).
 
 To do this, we take advantage of the data frame set up which is similar to a matrix that reflects the R X C (i.e., ROW * COLUMNS) principle. Below we create an object called `dat1` which takes all of the rows (indicated by a blank space) and only the `origin` column of the data.
 
@@ -104,18 +107,25 @@ Instructor note: To manipulate data frames in R we can use the bracket notation 
 
 ```{r}
 # basic data frame visual
-row1 = seq(1,10,1)
-row2 = c("a","b","c","d","e","f","g","h","i","j")
-dataBasic = cbind()
+col1 = seq(1,10,1) # 1 to 10 jumping by 1
+col2 = c("a","b","c","d","e","f","g","h","i","j")
+length(col1)
+length(col2)
+dataBasic = cbind(col1, col2)
+dim(dataBasic)
 ```
 
 We can think of data frames as "2D" with rows and columns. Get familar with subsetting based on your understanding of this structure. For example:
 
 ```{r}
-#subset rows 
-dataBasic[dataBasicX$row2 !="a",]
+#subset rows
+class(dataBasic)
+dataBasic = as.data.frame(dataBasic)
+dataBasic$col1 # for dataframe
+dataBasic[col2 !="a",] # for dataframe and matrix
+dataBasic[dataBasic$col2 !="a",]
 #select columns
-
+dataBasic[, "col2"]
 ```
 
 Now lets try similar moves with real data.
@@ -125,7 +135,9 @@ Now lets try similar moves with real data.
 dat1 = flights[ , origin] 
 
 # try to subset on a different column (hint: names() is useful)
-
+names(flights)
+dat2 = flights[ , arr_time]
+print(dat2)
 ```
 
 Note: the above line of code returns a vector not a data.table when we subset based on origin. Try `DT[ , .(variable)]` instead if you want a data.table object returned. `.()` is an alias for `list()` and ensures a `data.table` is returned. To get result in `data.table` format, run the code below :
@@ -133,26 +145,28 @@ Note: the above line of code returns a vector not a data.table when we subset ba
 ```{r}
 # returns a data.table
 dat1 = flights[ , .(origin)] 
+class(dat1)
 ```
 
 How might we quickly see which origin airports are included in the data?
 
 ```{r}
-table(dat1)
+table(dat1) # count the number of occurances of each category
+table(flights$origin)
 unique(flights$origin)
 ```
 
 Perhaps we want to view multiple columns at once. The following code tells R to select 'origin', 'year', 'month', 'hour' columns. The space + comma in the beginning tells R to show this for all rows.
 
 ```{r}
-flights[, .()]
+flights[ , .(origin, year, month, hour)]
 ```
 
 Can you find all the flights whose origin is 'JFK'?
 
 ```{r}
 # Filter based on one variable
-  
+flights[origin == "JFK"]
 ```
 
 ## Fast Data Manipulation with data.table
@@ -175,7 +189,7 @@ We can also sort the data based on a variable of our choice. Or use multiple var
 #set order 
 mydata0 <- setorder(flights, origin)
 mydata1 <- setorder(flights, -origin)
-mydata2 <- 
+mydata2 <- setorder(flights, origin, -dest)
 head(mydata2)
 ```
 
@@ -189,9 +203,11 @@ max(flights$air_time)
 range(flights$air_time)
 
 flights[, .(mean = mean(arr_delay, na.rm = TRUE),
-  median = ),
-  min = ),
-  max = )]
+  median = median(arr_delay, na.rm = TRUE),
+  min = min(arr_delay, na.rm = TRUE),
+  max = max(arr_delay, na.rm = TRUE))]
+
+summary(flights$arr_time)
 ```
 
 While all of this sorting is a useful way to get a first look at the data, we might also want to go ahead and begin to summarize the data. This is also a good moment to repeat 'reading' the code structure: ie: DT[where, select|update|do, by]. The way to read it (out loud) is: Take DT, subset rows using i, then calculate j, grouped by "k". "On which rows (i), what to do (j), grouped by what? (k).  [Note: see ArunSrinivasan-DataTable.pdf in BrightSpace.]
@@ -214,12 +230,12 @@ load("ncbreweries.rdata")
 # use the commands from the earlier part of the 
 # lesson to check the dimension, set up, and variable names
 colnames(ncbreweries)
-dim(ncbreweries)
+dim(ncbreweries) # 251   7
 head(ncbreweries)
 class(ncbreweries)
 
 # check out using tidyverse
-glimpse()
+glimpse(ncbreweries)
 ```
 
 _What do we see?_
@@ -259,11 +275,43 @@ ncb_mean_bc<-ncbreweries[, .(meanBeerCount = mean(beercount, na.rm = TRUE)), by 
 What if you wanted to know the earliest year each type of brewery was established, and the overall mean beer count for each type of brewery?
 
 ```{r}
-nc_mean_bc_est <-
+# all types of brewery
+unique(ncbreweries$type)
+
+ncbreweries_Micro = ncbreweries[type == "Microbrewery"]
+setkey(ncbreweries_Micro, est) # the earliest year is
+head(ncbreweries_Micro) # the earliest year for Microbrewery is 1900
+
+ncbreweries_Brewpub = ncbreweries[type == "Brewpub"]
+setkey(ncbreweries_Brewpub, est)
+head(ncbreweries_Brewpub) # the earliest year for Brewpub is 1995
+
+ncbreweries_ClB = ncbreweries[type == "Client Brewer"]
+setkey(ncbreweries_ClB, est)
+head(ncbreweries_ClB) # the earliest year for Client Brewer is 1997
+
+ncbreweries_BB = ncbreweries[type == "Brewpub/Brewery"]
+setkey(ncbreweries_BB, est)
+head(ncbreweries_BB) # the earliest year for Brewpub/Brewery is 2003
+
+ncbreweries_CoB = ncbreweries[type == "Commercial Brewery"]
+setkey(ncbreweries_CoB, est)
+head(ncbreweries_CoB) # the earliest year for Commercial Brewery is 2014
+# Or doing by this
+ncb_min_bc<-ncbreweries[, .(min_est = min(est, na.rm = TRUE)), by = type]
+ncb_min_bc
+
+# overall mean beer count for each type of brewery
+
+ncbreweries_Micro[, .(mean = mean(beercount, na.rm = TRUE))] # for Microbrewery
+ncbreweries_Brewpub[, .(mean = mean(beercount, na.rm = TRUE))] # for Brewpub
+ncbreweries_ClB[, .(mean = mean(beercount, na.rm = TRUE))] # for Client Brewer
+ncbreweries_BB[, .(mean = mean(beercount, na.rm = TRUE))] # for Brewpub/Brewery
+ncbreweries_CoB[, .(mean = mean(beercount, na.rm = TRUE))] # for Commercial Brewery
 ```
 
 Now let's think a little about visualization, what is an easy plot for visualizing a trend from this particular data using base R?
-
+histogram
 ```{r}
 hist(ncbreweries$est, col="gray", main="",
      xlab="Establishment of Breweries")
@@ -272,7 +320,10 @@ hist(ncbreweries$est, col="gray", main="",
 Earlier we saw that microbreweries were established quite a long time ago, and yet the simple plot above showing the frequencies of observations broken down by time tells us that not many breweries were in north carolina until the last 3 decades.
 
 To investigate this further, on your own, how might we look at this similar trend across types of breweries?
-
+```{r}
+barplot(table(ncbreweries$type), col="red", main="",
+     xlab="Types of Breweries",ylab = "Counts")
+```
 ## Comparison to Tidy Data
 
 You have already learned about `tidy data` which we will focus on next for the basis of visualization. In general you can do a lot of great things both in base R and in the tidyverse. You should always work on improving both skillsets! Sometimes base R really comes in handy, especially when working with "big" data.
@@ -284,16 +335,17 @@ Now, how can we calculate the mean beer count for each type of brewery? (There a
 ncb_mean_bc <- ncbreweries[, .(meanBeerCount = mean(beercount, na.rm = TRUE)), by = type]
 ncb_mean_bc
 
-meanbeer <- ncbreweries %>%
- 
+meanbeer <- ncbreweries %>% group_by(type) %>% summarize(meanBeerCount = mean(beercount, na.rm = TRUE)) 
+meanbeer
 ```
 
 Next, can you make a simple graphic of this data? 
 
 
 ```{r}
-
-
+ggplot(data=meanbeer, aes(x=type, y=meanBeerCount)) +
+  geom_bar(stat="identity", fill="steelblue")+
+  theme_minimal()
 ```
 
 ----
